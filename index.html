@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multidomain Marathi Sentiment Analysis with Transformers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The application is designed as a tabbed single-page interface to logically segment the complex research information. This structure was chosen over a linear report to improve usability and allow users to navigate directly to sections of interest: Overview, Techniques, Model Comparisons, Methodology, and Papers. This task-oriented design helps users digest the information in manageable chunks. Key interactions include tab-based navigation to switch between content panes and interactive buttons to update the data visualization in the 'Model Comparison' section, allowing for direct exploration of the multi-domain performance challenge. -->
+    <!-- Visualization & Content Choices: 
+        1. Report Info: Core research challenges. -> Goal: Inform. -> Viz/Method: Icon-driven feature cards (HTML/Tailwind). -> Interaction: None. -> Justification: Breaks down complex issues into easily scannable points.
+        2. Report Info: Comparison of Transformer model performance. -> Goal: Compare. -> Viz/Method: Interactive Bar Chart (Chart.js/Canvas). -> Interaction: User clicks buttons to filter chart data by domain (e.g., Movie Reviews, Tweets). -> Justification: Visually demonstrates the performance variance across domains, which is central to the research problem. Interaction encourages exploration.
+        3. Report Info: Step-by-step research process. -> Goal: Organize. -> Viz/Method: Visual process flow diagram (HTML/Tailwind). -> Interaction: None. -> Justification: A flowchart is more intuitive and easier to follow than a text-based list, clearly outlining the project lifecycle.
+        4. Report Info: Academic sources. -> Goal: Inform. -> Viz/Method: Styled list of publications. -> Interaction: Links to external papers. -> Justification: Provides clear, actionable references for further reading. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDFBF8;
+            color: #403A3A;
+        }
+        .tab-active {
+            border-color: #8D7B68;
+            color: #8D7B68;
+            font-weight: 600;
+        }
+        .tab-inactive {
+            border-color: transparent;
+            color: #777;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 40vh;
+            max-height: 450px;
+        }
+        .flow-step {
+            transition: all 0.3s ease;
+        }
+        .flow-step:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.05);
+        }
+        .flow-arrow {
+            color: #C8B6A6;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-[#6D5D51]">Multidomain Sentiment Analysis for Marathi</h1>
+            <p class="mt-2 text-lg text-gray-600">A Technical Guide Using Transformer Models</p>
+        </header>
+
+        <div class="w-full max-w-5xl mx-auto">
+            <div class="border-b border-gray-200 mb-8">
+                <nav class="-mb-px flex space-x-4 md:space-x-6" aria-label="Tabs">
+                    <button onclick="changeTab(event, 'overview')" class="tab-active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Overview</button>
+                    <button onclick="changeTab(event, 'techniques')" class="tab-inactive whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Key Techniques</button>
+                    <button onclick="changeTab(event, 'comparison')" class="tab-inactive whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Model Comparison</button>
+                    <button onclick="changeTab(event, 'methodology')" class="tab-inactive whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Methodology</button>
+                    <button onclick="changeTab(event, 'papers')" class="tab-inactive whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">Relevant Papers</button>
+                </nav>
+            </div>
+
+            <main>
+                <div id="overview" class="tab-content space-y-6">
+                    <div class="bg-white/60 p-6 rounded-xl shadow-sm border border-gray-200/80">
+                        <h2 class="text-2xl font-semibold text-[#8D7B68] mb-3">Project Context</h2>
+                        <p class="text-gray-700 leading-relaxed">
+                            This project addresses the task of sentiment analysis for the Marathi language, which, despite being spoken by over 83 million people, is considered a low-resource language in the field of Natural Language Processing (NLP). The primary challenge is building a robust model that performs well across multiple domains (e.g., movie reviews, social media, news). Transformer-based models have shown great promise for such tasks, but their application requires specific strategies to overcome data scarcity and domain-specific linguistic nuances. This guide outlines the key challenges and a systematic approach to tackle them.
+                        </p>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="bg-white/60 p-6 rounded-xl shadow-sm border border-gray-200/80">
+                            <div class="flex items-center mb-3">
+                                <span class="text-2xl mr-3">📉</span>
+                                <h3 class="text-lg font-semibold text-[#8D7B68]">Data Scarcity</h3>
+                            </div>
+                            <p class="text-gray-700 text-sm">High-quality, labeled datasets for Marathi are limited, especially across multiple domains, making it difficult to train models from scratch.</p>
+                        </div>
+                        <div class="bg-white/60 p-6 rounded-xl shadow-sm border border-gray-200/80">
+                            <div class="flex items-center mb-3">
+                                <span class="text-2xl mr-3">🔄</span>
+                                <h3 class="text-lg font-semibold text-[#8D7B68]">Domain Shift</h3>
+                            </div>
+                            <p class="text-gray-700 text-sm">Language use, vocabulary, and context can vary significantly between domains (e.g., formal news vs. informal tweets), causing models trained on one domain to perform poorly on another.</p>
+                        </div>
+                        <div class="bg-white/60 p-6 rounded-xl shadow-sm border border-gray-200/80">
+                            <div class="flex items-center mb-3">
+                                <span class="text-2xl mr-3">🗣️</span>
+                                <h3 class="text-lg font-semibold text-[#8D7B68]">Code-Mixing</h3>
+                            </div>
+                            <p class="text-gray-700 text-sm">Marathi text, especially on social media, often mixes Devanagari script with Latin script (English words), a phenomenon that models must be able to handle effectively.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="techniques" class="tab-content hidden space-y-6">
+                     <div class="bg-white/60 p-6 rounded-xl shadow-sm border border-gray-200/80">
+                        <h2 class="text-2xl font-semibold text-[#8D7B68] mb-3">Core Strategies and Techniques</h2>
+                        <p class="text-gray-700 leading-relaxed mb-6">
+                           Successfully tackling multidomain sentiment analysis for Marathi hinges on a combination of leveraging existing powerful models and adapting them smartly. The following techniques are critical. They move from selecting the right foundation model to specialized training methods that address the core challenges of data scarcity and domain shift.
+                        </p>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="border border-gray-200/80 rounded-lg p-5">
+                                <h3 class="font-semibold text-lg text-gray-800 mb-2">1. Pre-trained Model Selection</h3>
+                                <p class="text-sm text-gray-600">The foundation of your project. Instead of training a model from zero, you use a large model already trained on vast amounts of text. Your choice here is critical.</p>
+                                <ul class="mt-3 list-disc list-inside text-sm space-y-2 text-gray-700">
+                                    <li><strong class="font-medium">Monolingual Models (e.g., MahaBERT):</strong> Trained specifically on Marathi text. These often outperform multilingual models because their entire vocabulary and training focus are on Marathi's unique structure and nuances. <span class="font-semibold text-[#8D7B68]">This is the recommended starting point.</span></li>
+                                    <li><strong class="font-medium">Indic Models (e.g., IndicBERT):</strong> Trained on several Indian languages, including Marathi. They are a strong alternative as they understand shared linguistic properties and handle code-mixing well.</li>
+                                    <li><strong class="font-medium">Multilingual Models (e.g., mBERT, XLM-R):</strong> Trained on over 100 languages. They can be a decent baseline but are often outperformed by more specialized models for specific language tasks.</li>
+                                </ul>
+                            </div>
+                            <div class="border border-gray-200/80 rounded-lg p-5">
+                                <h3 class="font-semibold text-lg text-gray-800 mb-2">2. Fine-Tuning Strategies</h3>
+                                <p class="text-sm text-gray-600">This is the process of adapting the pre-trained model to your specific task (sentiment analysis). The strategy you use is key to achieving good cross-domain performance.</p>
+                                <ul class="mt-3 list-disc list-inside text-sm space-y-2 text-gray-700">
+                                    <li><strong class="font-medium">Standard Fine-Tuning:</strong> Train the model on a labeled sentiment dataset (e.g., L3Cube-MahaSent-MD). This is the baseline approach.</li>
+                                    <li><strong class="font-medium">Domain-Adaptive Fine-Tuning (DAFT):</strong> Before task-specific fine-tuning, you continue the model's pre-training on a large corpus of unlabeled text from your target domains. This helps the model learn the vocabulary and style of each domain, significantly reducing the "domain shift" problem.</li>
+                                    <li><strong class="font-medium">Sequential Fine-Tuning:</strong> Fine-tune the model on one domain, then use those weights to start fine-tuning on another. This can sometimes help transfer knowledge between related domains.</li>
+                                </ul>
+                            </div>
+                            <div class="border border-gray-200/80 rounded-lg p-5">
+                                <h3 class="font-semibold text-lg text-gray-800 mb-2">3. Data Augmentation</h3>
+                                <p class="text-sm text-gray-600">Since labeled data is scarce, creating more training data artificially can boost model robustness and performance.</p>
+                                 <ul class="mt-3 list-disc list-inside text-sm space-y-2 text-gray-700">
+                                    <li><strong class="font-medium">Back-Translation:</strong> Translate a Marathi sentence to English (or another language) and then translate it back to Marathi. This often creates a paraphrased version of the original sentence, expanding your dataset.</li>
+                                    <li><strong class="font-medium">Easy Data Augmentation (EDA):</strong> Simple techniques like synonym replacement, random word insertion, random swap, and random deletion can create new training examples.</li>
+                                </ul>
+                            </div>
+                            <div class="border border-gray-200/80 rounded-lg p-5">
+                                <h3 class="font-semibold text-lg text-gray-800 mb-2">4. Handling Code-Mixing</h3>
+                                <p class="text-sm text-gray-600">Social media and review texts often contain mixed Marathi-English content. Your model and preprocessing must account for this.</p>
+                                <ul class="mt-3 list-disc list-inside text-sm space-y-2 text-gray-700">
+                                    <li>Modern transformer models like <strong class="font-medium">IndicBERT and MahaBERT</strong> are often pre-trained on corpora that include code-mixed text, making them inherently better at handling it.</li>
+                                    <li>Ensure your tokenizer can correctly handle both Devanagari and Latin scripts without breaking words. The pre-packaged tokenizers with these models are usually sufficient.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="comparison" class="tab-content hidden">
+                    <div class="bg-white/60 p-6 rounded-xl shadow-sm border border-gray-200/80">
+                        <h2 class="text-2xl font-semibold text-[#8D7B68] mb-2">Interactive Model Performance Comparison</h2>
+                        <p class="text-gray-700 leading-relaxed mb-6">
+                            This visualization illustrates the "domain shift" problem. A model's performance (measured here by F1-Score, which balances precision and recall) can vary significantly when tested on different data domains. Monolingual models like MahaBERT often show a stronger and more consistent performance on their native language tasks compared to general multilingual models. Use the buttons below to see how hypothetical model accuracies change across domains.
+                        </p>
+                        <div class="flex justify-center space-x-3 mb-6">
+                            <button id="btn-movie" class="px-4 py-2 bg-[#8D7B68] text-white rounded-md shadow-sm hover:bg-[#6D5D51] transition-colors text-sm font-medium" onclick="updateChart('movie')">Movie Reviews</button>
+                            <button id="btn-tweets" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium" onclick="updateChart('tweets')">General Tweets</button>
+                            <button id="btn-political" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors text-sm font-medium" onclick="updateChart('political')">Political Tweets</button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="modelChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="methodology" class="tab-content hidden">
+                     <div class="bg-white/60 p-6 rounded-xl shadow-sm border border-gray-200/80">
+                        <h2 class="text-2xl font-semibold text-[#8D7B68] mb-2">Proposed Research Methodology</h2>
+                         <p class="text-gray-700 leading-relaxed mb-8">
+                            Following a structured methodology is crucial for reproducible and effective research. This process flow outlines a clear path from data collection to final evaluation, incorporating the key techniques discussed earlier. Each step builds upon the last, ensuring that the model is robustly prepared and rigorously tested for the multi-domain challenge.
+                        </p>
+                        <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4">
+                            <div class="flow-step text-center p-5 bg-white border border-gray-200/80 rounded-lg shadow-sm w-full md:w-48">
+                                <div class="text-2xl mb-2">1️⃣</div>
+                                <h3 class="font-semibold text-gray-800">Data Collection</h3>
+                                <p class="text-xs text-gray-500 mt-1">Gather labeled data (e.g., L3Cube-MahaSent-MD) and unlabeled domain-specific corpora.</p>
+                            </div>
+                            <div class="text-2xl font-light flow-arrow transform md:rotate-0 rotate-90">→</div>
+                            <div class="flow-step text-center p-5 bg-white border border-gray-200/80 rounded-lg shadow-sm w-full md:w-48">
+                                <div class="text-2xl mb-2">2️⃣</div>
+                                <h3 class="font-semibold text-gray-800">Model Selection</h3>
+                                <p class="text-xs text-gray-500 mt-1">Choose a base model. Start with MahaBERT or IndicBERT for best results.</p>
+                            </div>
+                            <div class="text-2xl font-light flow-arrow transform md:rotate-0 rotate-90">→</div>
+                            <div class="flow-step text-center p-5 bg-white border border-gray-200/80 rounded-lg shadow-sm w-full md:w-48">
+                                <div class="text-2xl mb-2">3️⃣</div>
+                                <h3 class="font-semibold text-gray-800">Adaptive Training</h3>
+                                <p class="text-xs text-gray-500 mt-1">Perform Domain-Adaptive Fine-Tuning on your unlabeled domain corpora. (Optional but recommended).</p>
+                            </div>
+                            <div class="text-2xl font-light flow-arrow transform md:rotate-0 rotate-90">→</div>
+                            <div class="flow-step text-center p-5 bg-white border border-gray-200/80 rounded-lg shadow-sm w-full md:w-48">
+                                <div class="text-2xl mb-2">4️⃣</div>
+                                <h3 class="font-semibold text-gray-800">Task Fine-Tuning</h3>
+                                <p class="text-xs text-gray-500 mt-1">Fine-tune the model on the labeled sentiment dataset. Use data augmentation if needed.</p>
+                            </div>
+                             <div class="text-2xl font-light flow-arrow transform md:rotate-0 rotate-90">→</div>
+                             <div class="flow-step text-center p-5 bg-white border border-gray-200/80 rounded-lg shadow-sm w-full md:w-48">
+                                <div class="text-2xl mb-2">5️⃣</div>
+                                <h3 class="font-semibold text-gray-800">Evaluation</h3>
+                                <p class="text-xs text-gray-500 mt-1">Test the model's performance on test sets from each domain separately (in-domain) and combined (cross-domain).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="papers" class="tab-content hidden">
+                    <div class="bg-white/60 p-6 rounded-xl shadow-sm border border-gray-200/80">
+                        <h2 class="text-2xl font-semibold text-[#8D7B68] mb-4">Key Research Papers</h2>
+                        <p class="text-gray-700 leading-relaxed mb-6">
+                            The following papers are highly relevant to this research topic and provide datasets, models, and baseline results that will be invaluable for your work. They represent the foundational and recent advancements in NLP for the Marathi language.
+                        </p>
+                        <div class="space-y-4">
+                            <div class="border-b border-gray-200 pb-3">
+                                <h3 class="font-semibold text-gray-800">L3Cube-MahaSent-MD: A Multi-domain Marathi Sentiment Analysis Dataset and Transformer Models</h3>
+                                <p class="text-sm text-gray-600 mt-1">This is the most critical resource. It provides the first major multi-domain sentiment dataset for Marathi, covering movie reviews, tweets, subtitles, and political tweets. The paper also provides baseline results using various transformer models.</p>
+                                <a href="https://arxiv.org/abs/2306.13888" target="_blank" class="text-sm text-[#8D7B68] hover:underline font-medium mt-1 inline-block">Read Paper &rarr;</a>
+                            </div>
+                            <div class="border-b border-gray-200 pb-3">
+                                <h3 class="font-semibold text-gray-800">L3Cube-MahaCorpus and MahaBERT: Marathi Monolingual Corpus, Marathi BERT Language Models, and Resources</h3>
+                                <p class="text-sm text-gray-600 mt-1">This paper introduces MahaBERT, a powerful monolingual BERT model for Marathi. It demonstrates that monolingual models often outperform multilingual ones on downstream tasks like sentiment analysis, making MahaBERT a primary candidate for your research.</p>
+                                <a href="https://aclanthology.org/2022.wildre-1.17/" target="_blank" class="text-sm text-[#8D7B68] hover:underline font-medium mt-1 inline-block">Read Paper &rarr;</a>
+                            </div>
+                            <div class="border-b border-gray-200 pb-3">
+                                <h3 class="font-semibold text-gray-800">Mono vs Multilingual BERT for Hate Speech Detection and Text Classification: A Case Study in Marathi</h3>
+                                <p class="text-sm text-gray-600 mt-1">This work provides a direct comparison between monolingual (MahaBERT) and multilingual models (mBERT, IndicBERT, XLM-R) on various Marathi classification tasks. Its findings strongly support the use of monolingual models for achieving state-of-the-art results.</p>
+                                <a href="https://arxiv.org/abs/2204.08669" target="_blank" class="text-sm text-[#8D7B68] hover:underline font-medium mt-1 inline-block">Read Paper &rarr;</a>
+                            </div>
+                             <div>
+                                <h3 class="font-semibold text-gray-800">ai4bharat/indic-bert</h3>
+                                <p class="text-sm text-gray-600 mt-1">The official repository for IndicBERT, a multilingual model pre-trained on 12 major Indian languages. It's an excellent model for tasks involving code-mixing and serves as a strong baseline or alternative to a monolingual model.</p>
+                                <a href="https://huggingface.co/ai4bharat/indic-bert" target="_blank" class="text-sm text-[#8D7B68] hover:underline font-medium mt-1 inline-block">View on Hugging Face &rarr;</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const tabs = document.querySelectorAll('[onclick^="changeTab"]');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        function changeTab(event, tabID) {
+            tabContents.forEach(content => content.classList.add('hidden'));
+            tabs.forEach(tab => {
+                tab.classList.remove('tab-active');
+                tab.classList.add('tab-inactive');
+            });
+            document.getElementById(tabID).classList.remove('hidden');
+            event.target.classList.add('tab-active');
+            event.target.classList.remove('tab-inactive');
+        }
+
+        const chartData = {
+            movie: {
+                labels: ['MahaBERT', 'IndicBERT', 'mBERT'],
+                scores: [0.92, 0.89, 0.85]
+            },
+            tweets: {
+                labels: ['MahaBERT', 'IndicBERT', 'mBERT'],
+                scores: [0.88, 0.87, 0.82]
+            },
+            political: {
+                labels: ['MahaBERT', 'IndicBERT', 'mBERT'],
+                scores: [0.85, 0.83, 0.78]
+            }
+        };
+
+        let myChart;
+        const chartButtons = {
+            movie: document.getElementById('btn-movie'),
+            tweets: document.getElementById('btn-tweets'),
+            political: document.getElementById('btn-political'),
+        };
+
+        function updateChart(domain) {
+            const data = chartData[domain];
+            myChart.data.labels = data.labels;
+            myChart.data.datasets[0].data = data.scores;
+            myChart.data.datasets[0].label = `F1-Score on ${domain.replace(/^\w/, c => c.toUpperCase())} Data`;
+            myChart.update();
+            
+            Object.values(chartButtons).forEach(btn => {
+                btn.classList.remove('bg-[#8D7B68]', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+
+            chartButtons[domain].classList.add('bg-[#8D7B68]', 'text-white');
+            chartButtons[domain].classList.remove('bg-gray-200', 'text-gray-700');
+        }
+
+        window.onload = function() {
+            const ctx = document.getElementById('modelChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartData.movie.labels,
+                    datasets: [{
+                        label: 'F1-Score on Movie Review Data',
+                        data: chartData.movie.scores,
+                        backgroundColor: ['rgba(141, 123, 104, 0.7)', 'rgba(200, 182, 166, 0.7)', 'rgba(167, 160, 153, 0.7)'],
+                        borderColor: ['#8D7B68', '#C8B6A6', '#A7A099'],
+                        borderWidth: 2,
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1.0,
+                            title: {
+                                display: true,
+                                text: 'F1-Score'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(2);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+    </script>
+</body>
+</html>
